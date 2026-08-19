@@ -1,2 +1,4 @@
 .env
 venv/
+chatbot.db*
+**/__pycache__/

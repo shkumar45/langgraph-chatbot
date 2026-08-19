@@ -2,6 +2,7 @@
 langchain
 langchain-core
 langgraph
+langgraph-checkpoint-sqlite
 
 # OpenAI Integration
 langchain-openai
