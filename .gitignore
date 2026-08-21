@@ -2,3 +2,5 @@
 venv/
 chatbot.db*
 **/__pycache__/
+.claude/
+.agents/
