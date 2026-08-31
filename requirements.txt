@@ -3,12 +3,15 @@ langchain
 langchain-core
 langgraph
 langgraph-checkpoint-sqlite
+ddgs
+streamlit
 
 # OpenAI Integration
 langchain-openai
 openai
+streamlit
 
 # Environment Variable Management
 python-dotenv
 
-streamlit
+

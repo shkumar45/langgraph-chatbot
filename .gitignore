@@ -1,5 +1,5 @@
 .env
-venv/
+.venv/
 chatbot.db*
 **/__pycache__/
 .claude/*
