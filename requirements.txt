@@ -5,6 +5,7 @@ langgraph
 langgraph-checkpoint-sqlite
 ddgs
 streamlit
+langchain-mcp-adapters
 
 # OpenAI Integration
 langchain-openai
