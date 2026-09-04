@@ -30,9 +30,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      # Injected from the API service's hostname; settings.py adds https://
+      # `fromService`/`property: host` returns the private-network hostname
+      # (no .onrender.com), which the UI can't resolve. Set this by hand in
+      # the Render dashboard to the API service's real public URL, e.g.
+      # https://langgraph-chatbot-api-26dw.onrender.com
       - key: API_BASE_URL
-        fromService:
-          type: web
-          name: langgraph-chatbot-api
-          property: host
+        sync: false

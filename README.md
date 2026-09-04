@@ -74,13 +74,19 @@ on `http://127.0.0.1:8000`.
 | `langgraph-chatbot-api` | `uvicorn api.app:app` — the agent behind HTTP | yes (`/health`, `/chat/stream`, …) |
 | `langgraph-chatbot-ui` | `streamlit run src/frontend/streamlit_frontend.py` — the chat UI | yes (this is what you open in a browser) |
 
-The UI's `API_BASE_URL` is wired automatically from the API service's hostname
-(`fromService`), and `frontend/settings.py` prepends `https://`.
-
 1. Push this repo to GitHub.
 2. In Render, click **New > Blueprint** and select the repo — it picks up `render.yaml` (both services).
-3. When prompted, set the `sync: false` env vars on **the API service**: `OPENAI_API_KEY` (required) and `ALPHAVANTAGE_API_KEY` (for the stock tool).
+3. When prompted, set the `sync: false` env vars:
+   - On **the API service**: `OPENAI_API_KEY` (required) and `ALPHAVANTAGE_API_KEY` (for the stock tool).
+   - On **the UI service**: `API_BASE_URL` — the API service's real public URL, e.g.
+     `https://langgraph-chatbot-api-xxxx.onrender.com` (copy it from the API
+     service's page once it's deployed; Render appends a random suffix when
+     the plain name is taken, so it won't just be `.../langgraph-chatbot-api`).
 4. Deploy. Both services build with `pip install -r requirements.txt`.
+
+> `API_BASE_URL` is set by hand rather than via `fromService`/`property: host` —
+> that returns Render's private-network hostname (no `.onrender.com`), which
+> isn't resolvable the way this app is deployed.
 
 > If you had an earlier single-service deploy named `langgraph-chatbot`, delete it —
 > the Blueprint now creates `-api` and `-ui`.
