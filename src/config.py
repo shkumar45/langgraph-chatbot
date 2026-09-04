@@ -24,6 +24,10 @@ MCP_CALCULATOR_URL = os.getenv(
     "MCP_CALCULATOR_URL",
     "https://calculator-mcp-server-7prd.onrender.com/mcp",
 )
+# Cap how long we wait on a (possibly cold-starting) MCP server so a slow/down
+# server can never block app startup indefinitely. Render free-tier services
+# can take 30-60s to cold-start, so this is generous but still bounded.
+MCP_TOOLS_TIMEOUT = float(os.getenv("MCP_TOOLS_TIMEOUT", "25"))
 
 # --- Persistence ---
 # "sqlite" -> persist conversation history to CHECKPOINT_DB
