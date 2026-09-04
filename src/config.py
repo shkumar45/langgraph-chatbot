@@ -26,6 +26,13 @@ MCP_CALCULATOR_URL = os.getenv(
 )
 
 # --- Persistence ---
+# "sqlite" -> persist conversation history to CHECKPOINT_DB
+# "memory" -> keep history only for the life of the process
+# Defaults to "memory" on Render (ephemeral disk), "sqlite" everywhere else.
+ON_RENDER = bool(os.getenv("RENDER"))
+CHECKPOINTER = os.getenv(
+    "CHECKPOINTER", "memory" if ON_RENDER else "sqlite"
+).lower()
 CHECKPOINT_DB = os.getenv("CHECKPOINT_DB", "chatbot.db")
 
 # --- API server ---

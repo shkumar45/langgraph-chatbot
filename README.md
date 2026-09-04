@@ -1,10 +1,10 @@
 # LangGraph Chatbot
 
 A simple conversational chatbot built with [LangGraph](https://langchain-ai.github.io/langgraph/) and [Streamlit](https://streamlit.io/). It streams responses from an OpenAI model and persists chat history across sessions using a SQLite-backed checkpointer, so previous conversation threads can be reopened from the sidebar.
-
+![alt text](image.png)
 ## How it works
 
-- `src/graph/` builds the LangGraph agent: `workflow.py` assembles the `StateGraph` (a `chat_node` wired to a `ToolNode`) and compiles it with an async SQLite checkpointer; `router.py` holds the conditional-edge routing. Each conversation is a `thread_id` in `chatbot.db`.
+- `src/graph/` builds the LangGraph agent: `workflow.py` assembles the `StateGraph` (a `chat_node` wired to a `ToolNode`) and compiles it with a checkpointer; `router.py` holds the conditional-edge routing. Each conversation is a `thread_id`. The checkpointer is `AsyncSqliteSaver` locally (persisted to `chatbot.db`) and `InMemorySaver` on Render — see `CHECKPOINTER` below.
 - `src/tools/` holds one tool per file (web search, stock price, PDF ingest/search) plus `mcp.py`; `get_all_tools()` merges the local tools with the remote MCP tools.
 - `src/api/` is a FastAPI layer (HTTP routing + SSE streaming) over the same graph.
 - `src/standalone/` is the in-process path: `streamlit_frontend.py` (chat UI) talking to `langgraph_backend.py` (async loop + sync bridges) without going over HTTP.
@@ -67,14 +67,32 @@ on `http://127.0.0.1:8000`.
 
 ## Deploying to Render
 
-This repo includes a `render.yaml` for [Render](https://render.com)'s Blueprint deploys:
+`render.yaml` is a Blueprint that deploys **two web services**:
+
+| Service | What it runs | Public? |
+| --- | --- | --- |
+| `langgraph-chatbot-api` | `uvicorn api.app:app` — the agent behind HTTP | yes (`/health`, `/chat/stream`, …) |
+| `langgraph-chatbot-ui` | `streamlit run src/frontend/streamlit_frontend.py` — the chat UI | yes (this is what you open in a browser) |
+
+The UI's `API_BASE_URL` is wired automatically from the API service's hostname
+(`fromService`), and `frontend/settings.py` prepends `https://`.
 
 1. Push this repo to GitHub.
-2. In Render, click **New > Blueprint** and select the repo — it will pick up `render.yaml` automatically.
-3. When prompted, set the `OPENAI_API_KEY` environment variable (marked `sync: false` so it isn't stored in the repo).
-4. Deploy. Render builds with `pip install -r requirements.txt` and starts the app with `streamlit run ...`.
+2. In Render, click **New > Blueprint** and select the repo — it picks up `render.yaml` (both services).
+3. When prompted, set the `sync: false` env vars on **the API service**: `OPENAI_API_KEY` (required) and `ALPHAVANTAGE_API_KEY` (for the stock tool).
+4. Deploy. Both services build with `pip install -r requirements.txt`.
 
-**Note on persistence:** `chatbot.db` lives on local disk. On Render's free plan, disk is ephemeral and conversation history will be lost on redeploys/restarts. For durable history, add a paid [persistent disk](https://render.com/docs/disks) mounted at the project directory, or switch the checkpointer to a hosted Postgres database (e.g. `langgraph-checkpoint-postgres` with Render's managed Postgres).
+> If you had an earlier single-service deploy named `langgraph-chatbot`, delete it —
+> the Blueprint now creates `-api` and `-ui`.
+
+**Note on persistence (`CHECKPOINTER`):**
+
+| Value | Behaviour |
+| --- | --- |
+| `sqlite` | Persist history to `CHECKPOINT_DB` (`chatbot.db`). Default when **not** on Render. |
+| `memory` | Keep history only for the life of the process. Default on Render (set in `render.yaml`), since the free plan's disk is ephemeral anyway. |
+
+Set `CHECKPOINTER` explicitly to override the default in either direction. For durable history on Render, use `sqlite` with a paid [persistent disk](https://render.com/docs/disks), or swap in `langgraph-checkpoint-postgres` with Render's managed Postgres.
 
 ## Project structure
 
@@ -100,7 +118,7 @@ This repo includes a `render.yaml` for [Render](https://render.com)'s Blueprint 
 │   │   └── schemas.py         # request/response models
 │   ├── graph/                 # agent graph assembly
 │   │   ├── __init__.py
-│   │   ├── workflow.py        # StateGraph build + compile w/ SqliteSaver
+│   │   ├── workflow.py        # StateGraph build + compile; sqlite/memory checkpointer
 │   │   └── router.py          # conditional-edge routing (route_after_chat)
 │   ├── agents/                # graph nodes
 │   │   ├── __init__.py

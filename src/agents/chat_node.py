@@ -1,12 +1,17 @@
 """The agent's reasoning node.
 
-`make_chat_node` binds a tool-aware LLM behind a ChatPromptTemplate that
-injects a system prompt on every turn without persisting it to graph state.
+`make_chat_node` owns the model: it binds the given tools to the LLM and puts a
+ChatPromptTemplate in front so a system prompt is injected on every turn without
+being persisted to graph state.
 """
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_openai import ChatOpenAI
 
+import config
 from state import ChatState
+
+llm = ChatOpenAI(model=config.OPENAI_MODEL)
 
 SYSTEM_PROMPT = (
     "You are a helpful assistant with access to tools: web search, stock "
@@ -29,8 +34,9 @@ _PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
-def make_chat_node(llm_with_tools):
-    """Return the `chat_node` coroutine for the agent graph."""
+def make_chat_node(tools):
+    """Return the `chat_node` coroutine, with `tools` bound to the model."""
+    llm_with_tools = llm.bind_tools(tools) if tools else llm
     chain = _PROMPT | llm_with_tools
 
     async def chat_node(state: ChatState):
