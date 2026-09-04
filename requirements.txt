@@ -1,18 +1,29 @@
-# LangChain Core
+# LangChain / LangGraph
 langchain
 langchain-core
+langchain-text-splitters
+langchain-community
+langchain-mcp-adapters
 langgraph
 langgraph-checkpoint-sqlite
-ddgs
-streamlit
-langchain-mcp-adapters
 
-# OpenAI Integration
+# OpenAI
 langchain-openai
 openai
+
+# Tools
+ddgs
+faiss-cpu
+pypdf
+
+# Persistence
+aiosqlite
+
+# API + App
+fastapi
+uvicorn[standard]
+httpx
 streamlit
 
-# Environment Variable Management
+# Environment variables
 python-dotenv
-
-

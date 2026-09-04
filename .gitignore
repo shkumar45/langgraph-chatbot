@@ -4,3 +4,4 @@ chatbot.db*
 **/__pycache__/
 .claude/*
 .agents/*
+intro-to-ml.pdf

@@ -1,7 +1,22 @@
-import streamlit as st
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
-from langgraph_backend import stream_chat, get_conversation, retrieve_all_threads
-import uuid
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # make src/ importable
+
+import uuid  # noqa: E402
+
+import streamlit as st  # noqa: E402
+from langchain_core.messages import (  # noqa: E402
+    AIMessage,
+    HumanMessage,
+    ToolMessage,
+)
+
+from standalone.langgraph_backend import (  # noqa: E402
+    get_conversation,
+    retrieve_all_threads,
+    stream_chat,
+)
 
 
 # Utility functions
