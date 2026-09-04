@@ -21,18 +21,18 @@ services:
         value: memory
 
   # --- Frontend: Streamlit UI that talks to the API over HTTP ---
-  - type: web
-    name: langgraph-chatbot-ui
-    env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run src/frontend/streamlit_frontend.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
-      # Injected from the API service's hostname; settings.py adds https://
-      - key: API_BASE_URL
-        fromService:
-          type: web
-          name: langgraph-chatbot-api
-          property: host
+  # - type: web
+  #   name: langgraph-chatbot-ui
+  #   env: python
+  #   plan: free
+  #   buildCommand: pip install -r requirements.txt
+  #   startCommand: streamlit run src/frontend/streamlit_frontend.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+  #   envVars:
+  #     - key: PYTHON_VERSION
+  #       value: 3.11.9
+  #     # Injected from the API service's hostname; settings.py adds https://
+  #     - key: API_BASE_URL
+  #       fromService:
+  #         type: web
+  #         name: langgraph-chatbot-api
+  #         property: host
