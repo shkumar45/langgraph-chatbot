@@ -1,4 +1,5 @@
 """FastAPI layer: HTTP routing + streaming for the LangGraph agent."""
+import asyncio
 import json
 from contextlib import asynccontextmanager
 
@@ -6,10 +7,29 @@ from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
 import config  # noqa: F401  -- imported for side effect: loads .env
-from graph import build_graph, get_checkpointer
+from graph import build_graph, get_checkpointer, get_tool_names, mcp_tools_missing
 
 from . import service
-from .schemas import ChatRequest, ConversationResponse, ThreadList
+from .schemas import ChatRequest, ConversationResponse, ThreadList, ToolList
+
+# If the MCP server was cold at startup, keep checking in the background
+# instead of only ever getting one shot at it. Bounded so a permanently
+# down server doesn't retry forever.
+MCP_RETRY_INTERVAL_SECONDS = 20
+MCP_RETRY_MAX_ATTEMPTS = 6  # ~2 minutes total
+
+
+async def _retry_mcp_tools(app: FastAPI) -> None:
+    for attempt in range(1, MCP_RETRY_MAX_ATTEMPTS + 1):
+        await asyncio.sleep(MCP_RETRY_INTERVAL_SECONDS)
+        app.state.chatbot = await build_graph()
+        if not mcp_tools_missing():
+            print(f"MCP tools recovered on retry {attempt}: {get_tool_names()}")
+            return
+    print(
+        f"Giving up on MCP tools after {MCP_RETRY_MAX_ATTEMPTS} retries; "
+        "continuing with local tools only until the next restart."
+    )
 
 
 @asynccontextmanager
@@ -18,7 +38,15 @@ async def lifespan(app: FastAPI):
     # aiosqlite connection is bound to the loop that will use it.
     app.state.checkpointer = await get_checkpointer()
     app.state.chatbot = await build_graph()
+
+    retry_task = None
+    if mcp_tools_missing():
+        retry_task = asyncio.create_task(_retry_mcp_tools(app))
+
     yield
+
+    if retry_task:
+        retry_task.cancel()
 
 
 app = FastAPI(title="LangGraph Chatbot API", lifespan=lifespan)
@@ -31,6 +59,11 @@ def _sse(event: str, data: dict) -> str:
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/tools", response_model=ToolList)
+async def tools():
+    return ToolList(tools=get_tool_names())
 
 
 @app.get("/threads", response_model=ThreadList)

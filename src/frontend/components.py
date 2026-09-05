@@ -10,6 +10,9 @@ import settings
 def render_sidebar() -> None:
     st.sidebar.title("LangGraph MCP Chatbot")
     st.sidebar.caption(f"API: {settings.API_BASE_URL}")
+    tool_names = st.session_state.get("tool_names") or []
+    if tool_names:
+        st.sidebar.caption(f"Tools Supported: {', '.join(tool_names)}")
 
     if st.sidebar.button("New Chat"):
         session_state.reset_chat()

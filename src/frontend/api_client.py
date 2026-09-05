@@ -14,6 +14,13 @@ def _get(path: str):
     return response.json()
 
 
+def list_tools() -> list[str]:
+    try:
+        return _get("/tools")["tools"]
+    except httpx.HTTPError:
+        return []
+
+
 def list_threads() -> list[str]:
     try:
         return _get("/threads")["threads"]

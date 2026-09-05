@@ -16,6 +16,11 @@ def init() -> None:
     st.session_state.setdefault("thread_id", generate_thread_id())
     if "chat_threads" not in st.session_state:
         st.session_state["chat_threads"] = api_client.list_threads()
+    # Retry (not just once) until we get a non-empty list: right after a cold
+    # start the API may briefly report zero/local-only tools while its own
+    # MCP retry is still in flight.
+    if not st.session_state.get("tool_names"):
+        st.session_state["tool_names"] = api_client.list_tools()
     add_thread(st.session_state["thread_id"])
 
 
