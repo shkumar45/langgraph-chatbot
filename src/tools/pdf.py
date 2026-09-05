@@ -68,6 +68,26 @@ def _ingest_pdf(source: str) -> dict:
                 pass
 
 
+def ingest_pdf_bytes(file_bytes: bytes, filename: str) -> dict:
+    """
+    Ingest a PDF from raw bytes (e.g. a browser upload) rather than a path/URL.
+    Same effect as `_ingest_pdf`, with the summary's `source` set to `filename`.
+    """
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as fh:
+        fh.write(file_bytes)
+        tmp_path = fh.name
+    try:
+        result = _ingest_pdf(tmp_path)
+        if "source" in result:
+            result["source"] = filename
+        return result
+    finally:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+
+
 @tool
 def ingest_pdf(source: str) -> dict:
     """

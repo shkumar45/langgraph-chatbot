@@ -22,3 +22,10 @@ class ToolList(BaseModel):
 class ConversationResponse(BaseModel):
     thread_id: str
     messages: list[Message]
+
+
+class PdfIngestResponse(BaseModel):
+    source: str
+    pages: int
+    chunks: int
+    characters: int

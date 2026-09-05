@@ -23,6 +23,7 @@ aiosqlite
 fastapi
 uvicorn[standard]
 httpx
+python-multipart
 streamlit
 
 # Environment variables

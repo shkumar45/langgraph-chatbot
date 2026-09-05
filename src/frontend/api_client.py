@@ -40,6 +40,27 @@ def load_conversation(thread_id: str) -> list[dict]:
     ]
 
 
+def ingest_pdf(file_bytes: bytes, filename: str) -> dict:
+    """POST a PDF to /pdf/ingest. Returns the ingest summary or {"error": ...}."""
+    try:
+        files = {"file": (filename, file_bytes, "application/pdf")}
+        response = httpx.post(
+            f"{settings.API_BASE_URL}/pdf/ingest",
+            files=files,
+            timeout=settings.INGEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as exc:
+        try:
+            detail = exc.response.json().get("detail", str(exc))
+        except (ValueError, AttributeError):
+            detail = str(exc)
+        return {"error": detail}
+    except httpx.HTTPError as exc:
+        return {"error": f"Could not reach the API: {exc}"}
+
+
 def stream_turn(thread_id: str, message: str):
     """Yield ``(event, data)`` from ``POST /chat/stream``.
 

@@ -13,3 +13,6 @@ API_BASE_URL = _raw_api if "://" in _raw_api else f"https://{_raw_api}"
 # Generous connect timeout; no read timeout so SSE streams can stay open.
 STREAM_TIMEOUT = httpx.Timeout(10.0, read=None)
 REQUEST_TIMEOUT = httpx.Timeout(15.0)
+# PDF ingestion embeds every chunk via the OpenAI API — can take a while for
+# a large file.
+INGEST_TIMEOUT = httpx.Timeout(10.0, read=60.0)

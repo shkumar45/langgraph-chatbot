@@ -3,14 +3,22 @@ import asyncio
 import json
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 
 import config  # noqa: F401  -- imported for side effect: loads .env
 from graph import build_graph, get_checkpointer, get_tool_names, mcp_tools_missing
+from tools.pdf import ingest_pdf_bytes
 
 from . import service
-from .schemas import ChatRequest, ConversationResponse, ThreadList, ToolList
+from .schemas import (
+    ChatRequest,
+    ConversationResponse,
+    PdfIngestResponse,
+    ThreadList,
+    ToolList,
+)
 
 # If the MCP server was cold at startup, keep checking in the background
 # instead of only ever getting one shot at it. Bounded so a permanently
@@ -64,6 +72,22 @@ async def health():
 @app.get("/tools", response_model=ToolList)
 async def tools():
     return ToolList(tools=get_tool_names())
+
+
+@app.post("/pdf/ingest", response_model=PdfIngestResponse)
+async def ingest_pdf(file: UploadFile = File(...)):
+    """
+    Ingest a PDF into the shared FAISS index so the agent's `search_pdf` tool
+    can answer questions about it. Runs off the event loop (embedding calls
+    are blocking) so it doesn't stall concurrent chat streams.
+    """
+    data = await file.read()
+    result = await run_in_threadpool(
+        ingest_pdf_bytes, data, file.filename or "upload.pdf"
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return PdfIngestResponse(**result)
 
 
 @app.get("/threads", response_model=ThreadList)
