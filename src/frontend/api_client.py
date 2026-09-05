@@ -5,11 +5,23 @@ import httpx
 
 import settings
 
+# The base URL every request uses. Defaults to the env-derived value;
+# session_state.init() calls set_base_url() so a per-session override takes
+# effect for real requests, not just the sidebar display.
+_base_url = settings.API_BASE_URL
+
+
+def set_base_url(url: str) -> None:
+    global _base_url
+    _base_url = settings.normalize_base_url(url)
+
+
+def get_base_url() -> str:
+    return _base_url
+
 
 def _get(path: str):
-    response = httpx.get(
-        f"{settings.API_BASE_URL}{path}", timeout=settings.REQUEST_TIMEOUT
-    )
+    response = httpx.get(f"{_base_url}{path}", timeout=settings.REQUEST_TIMEOUT)
     response.raise_for_status()
     return response.json()
 
@@ -45,7 +57,7 @@ def ingest_pdf(file_bytes: bytes, filename: str) -> dict:
     try:
         files = {"file": (filename, file_bytes, "application/pdf")}
         response = httpx.post(
-            f"{settings.API_BASE_URL}/pdf/ingest",
+            f"{_base_url}/pdf/ingest",
             files=files,
             timeout=settings.INGEST_TIMEOUT,
         )
@@ -71,7 +83,7 @@ def stream_turn(thread_id: str, message: str):
     body = {"thread_id": thread_id, "message": message}
     with httpx.stream(
         "POST",
-        f"{settings.API_BASE_URL}/chat/stream",
+        f"{_base_url}/chat/stream",
         json=body,
         timeout=settings.STREAM_TIMEOUT,
     ) as response:

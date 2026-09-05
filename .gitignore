@@ -2,6 +2,7 @@
 .venv/
 chatbot.db*
 **/__pycache__/
+.pytest_cache/
 .claude/*
 .agents/*
 intro-to-ml.pdf

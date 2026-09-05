@@ -1,0 +1,19 @@
+[tool.pytest.ini_options]
+# src/ modules use bare imports ("import config", "from graph import ...");
+# src/frontend/ modules additionally import each other by bare name
+# ("import settings", "import api_client") since Streamlit puts the script's
+# own directory on sys.path when it runs them directly.
+pythonpath = ["src", "src/frontend"]
+testpaths = ["tests"]
+markers = [
+    "integration: hits real external services (OpenAI, MCP); needs credentials, skipped by default",
+]
+addopts = "-m 'not integration'"
+asyncio_mode = "auto"
+# graph/workflow.py caches the checkpointer as a module-level singleton bound
+# to whichever event loop first built it (fine in production: one process,
+# one persistent loop). pytest-asyncio's default is a fresh loop per test
+# function, which would make a second test crash reusing that checkpointer
+# ("bound to a different event loop") — share one loop across the session
+# instead, matching real single-process usage.
+asyncio_default_test_loop_scope = "session"

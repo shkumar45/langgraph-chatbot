@@ -4,12 +4,11 @@ import streamlit as st
 
 import api_client
 import session_state
-import settings
 
 
 def render_sidebar() -> None:
     st.sidebar.title("LangGraph MCP Chatbot")
-    st.sidebar.caption(f"API: {settings.API_BASE_URL}")
+    st.sidebar.caption(f"API: {st.session_state['api_base_url']}")
     tool_names = st.session_state.get("tool_names") or []
     if tool_names:
         st.sidebar.caption(f"Tools Supported: {', '.join(tool_names)}")
@@ -74,7 +73,7 @@ def stream_assistant_reply(user_input: str) -> str:
                 elif event == "error":
                     yield f"\n\n**Error:** {data.get('message', 'unknown error')}"
         except httpx.HTTPError as exc:
-            yield f"\n\n**Could not reach the API at {settings.API_BASE_URL}:** {exc}"
+            yield f"\n\n**Could not reach the API at {api_client.get_base_url()}:** {exc}"
 
     reply = st.write_stream(tokens())
 

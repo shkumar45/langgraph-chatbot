@@ -4,6 +4,7 @@ import uuid
 import streamlit as st
 
 import api_client
+import settings
 
 
 def generate_thread_id() -> str:
@@ -14,6 +15,11 @@ def init() -> None:
     """Populate session state on first run of a session."""
     st.session_state.setdefault("message_history", [])
     st.session_state.setdefault("thread_id", generate_thread_id())
+    # Base URL of the API. Seeded from the environment; kept in session state
+    # so it can be overridden per session, and pushed into api_client so the
+    # override actually drives requests.
+    st.session_state.setdefault("api_base_url", settings.API_BASE_URL)
+    api_client.set_base_url(st.session_state["api_base_url"])
     if "chat_threads" not in st.session_state:
         st.session_state["chat_threads"] = api_client.list_threads()
     # Retry (not just once) until we get a non-empty list: right after a cold

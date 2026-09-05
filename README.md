@@ -100,6 +100,25 @@ on `http://127.0.0.1:8000`.
 
 Set `CHECKPOINTER` explicitly to override the default in either direction. For durable history on Render, use `sqlite` with a paid [persistent disk](https://render.com/docs/disks), or swap in `langgraph-checkpoint-postgres` with Render's managed Postgres.
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest                    # unit tests only — fast, no network, no API keys needed
+pytest -m integration     # + real OpenAI/MCP calls; needs OPENAI_API_KEY in .env
+```
+
+- `tests/unit/` — pure logic: the calculator tool, graph routing, `config.py`'s
+  checkpointer-selection logic, the frontend's HTTP client (SSE parsing,
+  mocked with `monkeypatch`) and session-state caching. No network calls, and
+  `tests/conftest.py` fills in dummy credentials so importing the app modules
+  never fails for lack of a real key.
+- `tests/integration/` — the real agent end to end (tool calls, PDF
+  ingest+search) and the FastAPI endpoints via `TestClient`. Marked
+  `integration` and excluded by default (`pyproject.toml`'s `addopts`); slow
+  and depends on external services (OpenAI, the calculator MCP server) being
+  up, so treat failures there as "check the service," not "the code broke."
+
 ## Project structure
 
 ```
@@ -139,7 +158,13 @@ Set `CHECKPOINTER` explicitly to override the default in either direction. For d
 │       ├── calculator.py
 │       ├── pdf.py
 │       └── mcp.py             # MultiServerMCPClient + load_mcp_tools()
+├── tests/
+│   ├── conftest.py            # loads .env, fills in dummy creds if absent
+│   ├── unit/                  # fast, no network — runs by default
+│   └── integration/           # real OpenAI/MCP calls — `pytest -m integration`
 ├── requirements.txt          # Python dependencies
+├── requirements-dev.txt      # + pytest, pytest-asyncio
+├── pyproject.toml            # pytest config
 ├── render.yaml               # Render Blueprint config
 ├── .env.sample               # Template for required environment variables
 └── chatbot.db                # SQLite database storing conversation threads (gitignored)

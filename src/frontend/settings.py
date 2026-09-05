@@ -6,9 +6,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Render's `fromService` gives a bare hostname; assume https:// when no scheme.
-_raw_api = os.getenv("API_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
-API_BASE_URL = _raw_api if "://" in _raw_api else f"https://{_raw_api}"
+
+def normalize_base_url(raw: str) -> str:
+    """Trim a trailing slash and assume https:// when no scheme is given
+    (Render's `fromService` hands over a bare hostname)."""
+    raw = raw.strip().rstrip("/")
+    return raw if "://" in raw else f"https://{raw}"
+
+
+# Default, from the environment. session_state.init() may override this per
+# session; api_client holds the value actually used for requests.
+API_BASE_URL = normalize_base_url(os.getenv("API_BASE_URL", "http://127.0.0.1:8000"))
 
 # Generous connect timeout; no read timeout so SSE streams can stay open.
 STREAM_TIMEOUT = httpx.Timeout(10.0, read=None)
