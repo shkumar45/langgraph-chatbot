@@ -54,6 +54,13 @@ def test_init_seeds_api_base_url_and_pushes_it_into_api_client(fake_state, monke
     assert pushed["url"] == "https://seeded.example.com"
 
 
+def test_init_seeds_api_ready_false(fake_state, monkeypatch):
+    monkeypatch.setattr(mod.api_client, "list_threads", lambda: [])
+    monkeypatch.setattr(mod.api_client, "list_tools", lambda: ["x"])
+    mod.init()
+    assert fake_state["api_ready"] is False
+
+
 def test_init_fetches_threads_only_once(fake_state, monkeypatch):
     calls = {"n": 0}
 

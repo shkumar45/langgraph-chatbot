@@ -1,5 +1,6 @@
 """Thin HTTP client for the chatbot API. No Streamlit here."""
 import json
+import time
 
 import httpx
 
@@ -24,6 +25,38 @@ def _get(path: str):
     response = httpx.get(f"{_base_url}{path}", timeout=settings.REQUEST_TIMEOUT)
     response.raise_for_status()
     return response.json()
+
+
+def is_healthy() -> bool:
+    """One quick /health probe."""
+    try:
+        return (
+            httpx.get(
+                f"{_base_url}/health", timeout=settings.HEALTH_TIMEOUT
+            ).status_code
+            == 200
+        )
+    except httpx.HTTPError:
+        return False
+
+
+def wait_until_ready(
+    max_wait: float | None = None, interval: float | None = None
+) -> bool:
+    """Poll /health until it answers 200 or `max_wait` seconds elapse.
+
+    Covers the ~30-60s cold start when a Render free-tier service has spun
+    down. Returns True as soon as the API responds, False on giving up.
+    """
+    max_wait = settings.API_WAKE_MAX_WAIT if max_wait is None else max_wait
+    interval = settings.API_WAKE_INTERVAL if interval is None else interval
+    deadline = time.monotonic() + max_wait
+    while True:
+        if is_healthy():
+            return True
+        if time.monotonic() + interval >= deadline:
+            return False
+        time.sleep(interval)
 
 
 def list_tools() -> list[str]:

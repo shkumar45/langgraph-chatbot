@@ -44,6 +44,49 @@ def _json_response(data):
     return R()
 
 
+class _StatusResponse:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+
+def test_is_healthy_true_on_200(monkeypatch):
+    monkeypatch.setattr(httpx, "get", lambda url, timeout=None: _StatusResponse(200))
+    assert api_client.is_healthy() is True
+
+
+def test_is_healthy_false_on_error(monkeypatch):
+    def boom(url, timeout=None):
+        raise httpx.ConnectError("down")
+
+    monkeypatch.setattr(httpx, "get", boom)
+    assert api_client.is_healthy() is False
+
+
+def test_wait_until_ready_returns_true_once_health_recovers(monkeypatch):
+    calls = {"n": 0}
+
+    def flaky_get(url, timeout=None):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise httpx.ConnectError("still cold")
+        return _StatusResponse(200)
+
+    monkeypatch.setattr(httpx, "get", flaky_get)
+    monkeypatch.setattr(api_client.time, "sleep", lambda s: None)
+
+    assert api_client.wait_until_ready(max_wait=60, interval=1) is True
+    assert calls["n"] == 3
+
+
+def test_wait_until_ready_gives_up_after_max_wait(monkeypatch):
+    monkeypatch.setattr(
+        httpx, "get", lambda url, timeout=None: (_ for _ in ()).throw(httpx.ConnectError("down"))
+    )
+    monkeypatch.setattr(api_client.time, "sleep", lambda s: None)
+
+    assert api_client.wait_until_ready(max_wait=2, interval=1) is False
+
+
 class FakeResponse:
     def __init__(self, json_data=None, status_code=200):
         self._json = json_data or {}

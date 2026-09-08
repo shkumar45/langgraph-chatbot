@@ -24,3 +24,9 @@ REQUEST_TIMEOUT = httpx.Timeout(15.0)
 # PDF ingestion embeds every chunk via the OpenAI API — can take a while for
 # a large file.
 INGEST_TIMEOUT = httpx.Timeout(10.0, read=60.0)
+
+# Waking a spun-down Render free-tier service: how long to keep polling
+# /health, and per-attempt timeout / gap between attempts.
+HEALTH_TIMEOUT = httpx.Timeout(5.0, read=10.0)
+API_WAKE_MAX_WAIT = 90.0
+API_WAKE_INTERVAL = 3.0

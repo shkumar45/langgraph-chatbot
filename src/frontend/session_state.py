@@ -20,6 +20,9 @@ def init() -> None:
     # override actually drives requests.
     st.session_state.setdefault("api_base_url", settings.API_BASE_URL)
     api_client.set_base_url(st.session_state["api_base_url"])
+    # Whether we've confirmed the API is awake this session. Cleared on any
+    # failed request so a mid-session Render spin-down re-triggers the gate.
+    st.session_state.setdefault("api_ready", False)
     if "chat_threads" not in st.session_state:
         st.session_state["chat_threads"] = api_client.list_threads()
     # Retry (not just once) until we get a non-empty list: right after a cold

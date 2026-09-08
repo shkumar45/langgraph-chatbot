@@ -57,8 +57,24 @@ def render_history() -> None:
             st.markdown(message["content"])
 
 
+def _ensure_api_awake() -> bool:
+    """Block until the API answers /health (Render free-tier cold start can
+    take ~1 min). Runs once per session unless a request later fails."""
+    if st.session_state.get("api_ready"):
+        return True
+    with st.spinner("Waking the server — the first request after idle can take ~1 min…"):
+        st.session_state["api_ready"] = api_client.wait_until_ready()
+    return st.session_state["api_ready"]
+
+
 def stream_assistant_reply(user_input: str) -> str:
     """Stream one assistant turn into the page and return the final text."""
+    if not _ensure_api_awake():
+        return (
+            f"The API at {api_client.get_base_url()} didn't respond in time. "
+            "It may still be starting up — try again in a minute."
+        )
+
     tool_status = {"box": None}
 
     def tokens():
@@ -73,6 +89,7 @@ def stream_assistant_reply(user_input: str) -> str:
                 elif event == "error":
                     yield f"\n\n**Error:** {data.get('message', 'unknown error')}"
         except httpx.HTTPError as exc:
+            st.session_state["api_ready"] = False  # re-gate on next message
             yield f"\n\n**Could not reach the API at {api_client.get_base_url()}:** {exc}"
 
     reply = st.write_stream(tokens())
