@@ -70,10 +70,16 @@ def _ensure_api_awake() -> bool:
 def stream_assistant_reply(user_input: str) -> str:
     """Stream one assistant turn into the page and return the final text."""
     if not _ensure_api_awake():
-        return (
-            f"The API at {api_client.get_base_url()} didn't respond in time. "
-            "It may still be starting up — try again in a minute."
+        health_url = f"{api_client.get_base_url()}/health"
+        message = (
+            f"The API didn't wake up in time. Render's free tier can take a "
+            f"minute or two to spin a service back up after it's been idle.\n\n"
+            f"Try opening [{health_url}]({health_url}) in a new tab to wake it "
+            'manually — once it shows `{"status":"ok"}`, come back and send '
+            "your message again."
         )
+        st.markdown(message)
+        return message
 
     tool_status = {"box": None}
 
