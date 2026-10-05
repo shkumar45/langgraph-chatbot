@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+	PYTHONUNBUFFERED=1 \
+	API_BASE_URL=http://api:8000
+
+WORKDIR /app
+
+# The UI only talks to the API over HTTP — it doesn't need the agent stack.
+RUN pip install --no-cache-dir streamlit httpx python-dotenv
+
+COPY src/frontend ./frontend
+
+EXPOSE 3000
+
+CMD ["streamlit", "run", "frontend/streamlit_frontend.py", "--server.address=0.0.0.0", "--server.port=3000", "--server.headless=true"]

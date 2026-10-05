@@ -8,10 +8,17 @@ import session_state
 
 def render_sidebar() -> None:
     st.sidebar.title("LangGraph MCP Chatbot")
-    st.sidebar.caption(f"API: {st.session_state['api_base_url']}")
+    health_url = f"{api_client.get_base_url()}/health"
+    st.sidebar.info(
+        f"**Wake up the agent before chatting:** open the "
+        f"[health endpoint]({health_url}) and wait until it shows "
+        '`{"status":"ok"}` — this can take about a minute on the free tier.'
+    )
     tool_names = st.session_state.get("tool_names") or []
     if tool_names:
         st.sidebar.caption(f"Tools Supported: {', '.join(tool_names)}")
+    if not st.session_state.get("mcp_ready"):
+        st.sidebar.caption("Calculator (MCP) tools are still loading…")
 
     if st.sidebar.button("New Chat"):
         session_state.reset_chat()

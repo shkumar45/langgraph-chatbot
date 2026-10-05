@@ -17,6 +17,9 @@ class ThreadList(BaseModel):
 
 class ToolList(BaseModel):
     tools: list[str]
+    # False while the MCP server's tools haven't loaded yet (e.g. it's still
+    # cold-starting) — lets the UI keep polling instead of caching a partial list.
+    mcp_ready: bool
 
 
 class ConversationResponse(BaseModel):

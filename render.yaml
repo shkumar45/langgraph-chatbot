@@ -19,6 +19,10 @@ services:
       # Render's disk is ephemeral on the free plan — keep history in memory.
       - key: CHECKPOINTER
         value: memory
+      # The calculator MCP server is also on the free tier and takes ~30s+
+      # to cold-start; the 25s default would time out before it answers.
+      - key: MCP_TOOLS_TIMEOUT
+        value: "60"
 
   # --- Frontend: Streamlit UI that talks to the API over HTTP ---
   - type: web

@@ -117,9 +117,27 @@ def test_list_threads_swallows_connection_errors(monkeypatch):
 
 def test_list_tools_happy_path(monkeypatch):
     monkeypatch.setattr(
+        httpx,
+        "get",
+        lambda url, timeout=None: FakeResponse({"tools": ["web_search", "add"], "mcp_ready": True}),
+    )
+    assert api_client.list_tools() == (["web_search", "add"], True)
+
+
+def test_list_tools_treats_missing_mcp_ready_as_not_ready(monkeypatch):
+    """An older API without the flag must not stop the UI from re-polling."""
+    monkeypatch.setattr(
         httpx, "get", lambda url, timeout=None: FakeResponse({"tools": ["web_search"]})
     )
-    assert api_client.list_tools() == ["web_search"]
+    assert api_client.list_tools() == (["web_search"], False)
+
+
+def test_list_tools_swallows_connection_errors(monkeypatch):
+    def raise_error(url, timeout=None):
+        raise httpx.ConnectError("boom")
+
+    monkeypatch.setattr(httpx, "get", raise_error)
+    assert api_client.list_tools() == ([], False)
 
 
 def test_load_conversation_filters_out_tool_and_empty_rows(monkeypatch):

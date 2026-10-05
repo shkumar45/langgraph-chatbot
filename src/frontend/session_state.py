@@ -25,11 +25,14 @@ def init() -> None:
     st.session_state.setdefault("api_ready", False)
     if "chat_threads" not in st.session_state:
         st.session_state["chat_threads"] = api_client.list_threads()
-    # Retry (not just once) until we get a non-empty list: right after a cold
-    # start the API may briefly report zero/local-only tools while its own
-    # MCP retry is still in flight.
-    if not st.session_state.get("tool_names"):
-        st.session_state["tool_names"] = api_client.list_tools()
+    # Keep re-fetching until the API reports its MCP tools have loaded: right
+    # after a cold start it serves only the local tools while its own MCP
+    # retry is still in flight, and that partial list must not stick.
+    if not st.session_state.get("mcp_ready"):
+        tools, mcp_ready = api_client.list_tools()
+        if tools or "tool_names" not in st.session_state:
+            st.session_state["tool_names"] = tools
+        st.session_state["mcp_ready"] = mcp_ready
     add_thread(st.session_state["thread_id"])
 
 

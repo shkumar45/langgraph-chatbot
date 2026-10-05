@@ -59,11 +59,16 @@ def wait_until_ready(
         time.sleep(interval)
 
 
-def list_tools() -> list[str]:
+def list_tools() -> tuple[list[str], bool]:
+    """Tool names, and whether the MCP server's tools have loaded yet.
+
+    ``([], False)`` if the API can't be reached.
+    """
     try:
-        return _get("/tools")["tools"]
+        data = _get("/tools")
     except httpx.HTTPError:
-        return []
+        return [], False
+    return data["tools"], data.get("mcp_ready", False)
 
 
 def list_threads() -> list[str]:

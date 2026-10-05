@@ -12,8 +12,9 @@ def test_health_and_tools_endpoints(require_real_openai_key):
     with TestClient(app) as client:
         assert client.get("/health").json() == {"status": "ok"}
 
-        tools = client.get("/tools").json()["tools"]
-        assert "web_search" in tools
+        body = client.get("/tools").json()
+        assert "web_search" in body["tools"]
+        assert isinstance(body["mcp_ready"], bool)
 
 
 def test_chat_stream_end_to_end(require_real_openai_key):

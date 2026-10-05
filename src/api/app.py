@@ -28,12 +28,14 @@ MCP_RETRY_MAX_ATTEMPTS = 6  # ~2 minutes total
 
 
 async def _retry_mcp_tools(app: FastAPI) -> None:
+    # Retry straight away: the timed-out startup attempt has already woken
+    # the MCP server, so it's usually ready by now.
     for attempt in range(1, MCP_RETRY_MAX_ATTEMPTS + 1):
-        await asyncio.sleep(MCP_RETRY_INTERVAL_SECONDS)
         app.state.chatbot = await build_graph()
         if not mcp_tools_missing():
             print(f"MCP tools recovered on retry {attempt}: {get_tool_names()}")
             return
+        await asyncio.sleep(MCP_RETRY_INTERVAL_SECONDS)
     print(
         f"Giving up on MCP tools after {MCP_RETRY_MAX_ATTEMPTS} retries; "
         "continuing with local tools only until the next restart."
@@ -71,7 +73,7 @@ async def health():
 
 @app.get("/tools", response_model=ToolList)
 async def tools():
-    return ToolList(tools=get_tool_names())
+    return ToolList(tools=get_tool_names(), mcp_ready=not mcp_tools_missing())
 
 
 @app.post("/pdf/ingest", response_model=PdfIngestResponse)

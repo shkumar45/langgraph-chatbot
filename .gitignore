@@ -6,3 +6,6 @@ chatbot.db*
 .claude/*
 .agents/*
 intro-to-ml.pdf
+terraform/.terraform/
+terraform/**/*.tfstate
+terraform/**/*.tfstate.*
